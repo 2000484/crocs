@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"start": "node src/index.js",
+		"build": "echo 'Building static site for GitHub Pages' && cp -r public/* . 2>/dev/null; true",
 		"format": "prettier --write .",
 		"lint": "eslint ./src/",
 		"lint:fix": "eslint ./src/ --fix"
