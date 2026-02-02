@@ -1010,6 +1010,34 @@ async function loadUrlInTab(id, url) {
 				loadingBar.hidden = true;
 				updateTabUI(id);
 				updateOmnibox();
+				
+				// Track URL changes within the iframe
+				try {
+					const contentWindow = tab.frame.frame.contentWindow;
+					if (contentWindow) {
+						// Listen for history changes
+						contentWindow.addEventListener("popstate", () => {
+							if (id === activeTabId) {
+								updateOmnibox();
+							}
+						});
+						
+						// Try to get the current URL from the frame
+						try {
+							const currentUrl = contentWindow.location.href;
+							if (currentUrl && currentUrl !== "about:blank") {
+								tab.url = currentUrl;
+								if (id === activeTabId) {
+									updateOmnibox();
+								}
+							}
+						} catch (e) {
+							console.log("Cannot access iframe URL:", e.message);
+						}
+					}
+				} catch (err) {
+					console.log("Could not attach navigation listeners:", err.message);
+				}
 			});
 
 			tab.frame.frame.addEventListener("error", (e) => {
@@ -1018,17 +1046,6 @@ async function loadUrlInTab(id, url) {
 				updateTabUI(id);
 				console.error("Frame error:", e);
 			});
-
-			// Track navigation within the frame to update URL bar
-			if (tab.frame.on) {
-				tab.frame.on("navigation", (url) => {
-					tab.url = url;
-					if (id === activeTabId) {
-						updateOmnibox();
-					}
-					updateTabUI(id);
-				});
-			}
 		} catch (err) {
 			loadingBar.hidden = true;
 			showError("Failed to initialize frame", err?.message || String(err));
@@ -1045,6 +1062,7 @@ async function loadUrlInTab(id, url) {
 
 	try {
 		tab.frame.go(url);
+		tab.url = url; // Ensure tab URL is updated immediately
 		console.log(`[Tab ${id}] Navigating to: ${url}`);
 
 		setTimeout(() => {
@@ -1053,6 +1071,19 @@ async function loadUrlInTab(id, url) {
 				tab.title = hostname;
 				tab.favicon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
 				updateTabUI(id);
+				
+				// Try to detect if page actually loaded by checking DOM
+				try {
+					const contentWindow = tab.frame.frame.contentWindow;
+					if (contentWindow && contentWindow.document && contentWindow.document.body) {
+						const bodyHTML = contentWindow.document.body.innerHTML;
+						if (!bodyHTML || bodyHTML.trim().length === 0) {
+							console.warn(`[Tab ${id}] Warning: Page body is empty for ${url}`);
+						}
+					}
+				} catch (e) {
+					console.log("Could not check page content:", e.message);
+				}
 			} catch (err) {
 				console.error("Error updating tab:", err);
 				tab.title = "Untitled";
