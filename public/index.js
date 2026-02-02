@@ -1057,9 +1057,9 @@ async function loadUrlInTab(id, url) {
 				console.error("Error updating tab:", err);
 				tab.title = "Untitled";
 			}
-			// Hide loading bar
+			// Hide loading bar after longer timeout for complex sites like Wordle
 			loadingBar.hidden = true;
-		}, 1000);
+		}, 2000);
 	} catch (err) {
 		console.error("Error loading URL:", err);
 		tab.title = "Error";
@@ -1275,7 +1275,11 @@ reloadButton.addEventListener("click", () => {
 	const tab = tabs.get(activeTabId);
 	if (tab?.isHome) {
 		renderRecent();
+	} else if (tab?.frame && tab?.url) {
+		// For Scramjet frames, use the frame's go method to reload
+		tab.frame.go(tab.url);
 	} else if (tab?.frame) {
+		// Fallback for regular frames
 		tab.frame.frame.contentWindow?.location.reload();
 	}
 });
