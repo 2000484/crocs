@@ -1144,42 +1144,28 @@ async function ensureTransport() {
 
 	const currentTransport = await connection.getTransport();
 	
-	try {
-		// Try to use bare transport (HTTP) first - more stable than libcurl
-		if (currentTransport !== "/baremux/bare.mjs") {
-			await connection.setTransport("/baremux/bare.mjs", [
+	if (currentTransport !== "/libcurl/index.mjs") {
+		try {
+			await connection.setTransport("/libcurl/index.mjs", [
 				{ 
-					http: `${location.protocol}//${location.host}`,
-					https: `${location.protocol}//${location.host}`,
-					ws: `ws://${location.host}`,
-					wss: `wss://${location.host}`,
+					websocket: wispUrl,
+					sslVerifyPeer: false,
+					sslVerifyHost: false,
+					connectTimeout: 90,
+					timeout: 180,
+					httpVersion: "1.1",
+					followLocation: true,
+					maxRedirs: 10,
+					// Add more buffer and lowspeed options
+					bufferSize: 524288, // 512KB
+					lowSpeedLimit: 1,  // 1 byte/s minimum
+					lowSpeedTime: 30, // for 30 seconds
 				},
 			]);
-			console.log("Transport: Using Bare");
-		}
-	} catch (err) {
-		console.warn("Bare transport failed, trying libcurl:", err);
-		
-		try {
-			// Fallback to libcurl with aggressive options
-			if (currentTransport !== "/libcurl/index.mjs") {
-				await connection.setTransport("/libcurl/index.mjs", [
-					{ 
-						websocket: wispUrl,
-						sslVerifyPeer: false,
-						sslVerifyHost: false,
-						connectTimeout: 60,
-						timeout: 120,
-						httpVersion: "1.1",
-						followLocation: true,
-						maxRedirs: 5,
-					},
-				]);
-				console.log("Transport: Using libcurl");
-			}
-		} catch (libcurlErr) {
-			console.error("Both transports failed:", libcurlErr);
-			showError("Failed to initialize transport", libcurlErr?.message);
+			console.log("Transport: libcurl initialized");
+		} catch (err) {
+			console.error("Failed to initialize libcurl transport:", err);
+			showError("Transport initialization failed", err?.message);
 		}
 	}
 
