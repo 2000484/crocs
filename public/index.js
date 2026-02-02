@@ -1141,6 +1141,11 @@ async function ensureTransport() {
 		"://" +
 		location.host +
 		"/wisp/";
+	const wsproxyUrl =
+		(location.protocol === "https:" ? "wss" : "ws") +
+		"://" +
+		location.host +
+		"/wsproxy/";
 
 	const currentTransport = await connection.getTransport();
 	
@@ -1148,7 +1153,7 @@ async function ensureTransport() {
 		try {
 			await connection.setTransport("/libcurl/index.mjs", [
 				{ 
-					websocket: wispUrl,
+					websocket: wsproxyUrl,
 					// Try wsproxy transport for simpler connection handling
 					transport: "wsproxy",
 					sslVerifyPeer: false,

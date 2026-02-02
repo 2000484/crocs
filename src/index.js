@@ -37,8 +37,9 @@ const fastify = Fastify({
 				handler(req, res);
 			})
 			.on("upgrade", (req, socket, head) => {
-				if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
-				else if (req.url.endsWith("/wsproxy/")) wisp.routeRequest(req, socket, head);
+				const path = (req.url || "").split("?")[0];
+				if (path.startsWith("/wisp/")) wisp.routeRequest(req, socket, head);
+				else if (path.startsWith("/wsproxy/")) wisp.routeRequest(req, socket, head);
 				else socket.end();
 			});
 	},
