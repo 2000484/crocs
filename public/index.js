@@ -1105,7 +1105,10 @@ async function ensureTransport() {
 				// Disable SSL verification for development environments
 				// This fixes "SSL peer certificate was not OK" errors
 				sslVerifyPeer: false,
-				sslVerifyHost: false
+				sslVerifyHost: false,
+				// Add connection timeout and retry options for better connectivity
+				connectTimeout: 30,
+				timeout: 60,
 			},
 		]);
 	}
